@@ -1,8 +1,6 @@
 import { Game } from "./game.js"
 
-const $ = (query) => { return document.querySelector(query) }
-
-const game_container = $('#game-container')
+const game_container = document.querySelector('#game-container')
 
 const game = new Game(game_container)
 game.initialize()

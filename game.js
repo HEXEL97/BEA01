@@ -14,9 +14,13 @@ export class Game {
     stage_default = undefined // stage default state for reload purposes
 
     game_element = undefined // element of the play area
+    timer_element = undefined // display for time wasted
 
     player_name = undefined // probably some awesome dude (or gal)
     valid = false // game solve status
+
+    timer = false // it's like a watch!
+    seconds = 0 // seconds wasted
 
     saves = [] // self-explanatory
 
@@ -30,14 +34,17 @@ export class Game {
 
         this.container = container
         this.game_element = document.createElement('div')
-        this.game_element.classList.add('game-container')
+        this.game_element.classList.add('play-area')
 
         const action_buttons = document.createElement('div')
         action_buttons.classList.add('actions')
 
         const back_button = document.createElement('button')
         back_button.innerText = "< back"
-        back_button.addEventListener('click', () => { this.show(this.menu.getStageSelector()) })
+        back_button.addEventListener('click', () => {
+            this.stopTimer()
+            this.show(this.menu.getStageSelector())
+        })
         action_buttons.appendChild(back_button)
 
         const restart_button = document.createElement('button')
@@ -46,6 +53,12 @@ export class Game {
         action_buttons.appendChild(restart_button)
 
         this.game_element.appendChild(action_buttons)
+
+        this.timer_element = document.createElement('h1')
+        this.timer_element.classList.add('timer')
+        this.timer_element.innerText = '00:00'
+
+        this.game_element.appendChild(this.timer_element)
 
         this.menu = new Menu(this)
 
@@ -63,7 +76,17 @@ export class Game {
     }
 
     initialize() {
-        this.show(this.menu.getStageSelector())
+        this.player_name = this.getCookie('playername')
+        if (this.player_name === undefined) {
+            this.show(this.menu.getNameEditor())
+        } else {
+            this.show(this.menu.getStageSelector())
+        }
+    }
+
+    setPlayerName(name) {
+        this.player_name = name
+        this.setCookie('playername', this.player_name)
     }
 
     setStage(stage, default_stage = undefined) {
@@ -81,11 +104,31 @@ export class Game {
 
     }
 
-    save() {
+    setCookie(name, value) {
         const d = new Date();
         d.setTime(d.getTime() + (30 * 24 * 60 * 60 * 1000));
         const expires = "expires=";
-        document.cookie = this.stage.name + "=" + JSON.stringify(this.stage.export()) + "; " + expires;
+        document.cookie = name + "=" + JSON.stringify(value) + "; " + expires;
+    }
+
+    getCookie(name) {
+        const value = document.cookie.split('; ').map(cookie => { return { name: cookie.split('=')[0], value: cookie.split('=')[1] } }).filter(cookie => cookie.name === name)
+        return value.length > 0 ? JSON.parse(value) : undefined
+    }
+
+    saveGame() {
+        this.setCookie(this.stage.name, this.stage.export())
+    }
+
+    saveScore() {
+        let scoreboard = this.getCookie('scoreboard')
+
+        if (scoreboard === undefined) scoreboard = []
+        if (scoreboard[this.stage.name] === undefined) scoreboard[this.stage.name] = []
+
+        scoreboard[this.stage.name].push({ time: this.seconds, name: this.player_name })
+
+        this.setCookie('scoreboard', scoreboard)
     }
 
     deleteSave() {
@@ -101,13 +144,14 @@ export class Game {
             y[1].forEach(x => {
                 setTimeout(() => {
                     this.toggleLamp(this.stage.matrix[y[0]][x])
-                }, (100 * i++))
+                }, (50 * i++))
             })
         })
     }
 
     restart() {
         setTimeout(() => {
+            this.stopTimer()
             this.setStage(this.stage_default)
         }, 500)
         this.show()
@@ -121,15 +165,20 @@ export class Game {
         game.id = 'game'
         game.classList.add('game')
 
+        const width = `${Math.ceil(100 / matrix.length)}%`
+        const height = `${Math.ceil(100 / matrix[0].length)}%`
+
         matrix.forEach(row => {
 
             const row_element = document.createElement('div')
             row_element.classList.add('board-row')
+            row_element.style.height = height
 
             row.forEach(cell => {
 
                 cell.element = document.createElement('div')
                 cell.element.classList.add('board-cell')
+                cell.element.style.width = width
 
                 switch (cell.type) {
                     case type_block:
@@ -170,6 +219,8 @@ export class Game {
         this.game_element.appendChild(game)
 
         setTimeout(() => { this.loadSave() }, 500)
+
+        this.startTimer()
 
         this.validate()
 
@@ -324,19 +375,41 @@ export class Game {
         }
     }
 
+    startTimer(seconds = 0) {
+        this.seconds = seconds
+        this.timer_element.classList.remove('happy')
+        const toTime = (seconds, units = [60, 60, 24]) => {
+            const unit = units.shift()
+            let time = Math.floor(seconds % unit).toString()
+            time = '0'.repeat(unit.toString().length - time.length) + time
+            return (units.length > 0) ? time = toTime(Math.floor(seconds / unit), units) + ':' + time : time
+        }
+        this.timer_element.innerHTML = `<h1>${toTime(seconds)}</h1>`
+        this.timer = setTimeout(() => {
+            this.startTimer(seconds + 1)
+        }, 1000)
+    }
+
+    stopTimer() {
+        this.timer_element.classList.add('happy')
+        clearTimeout(this.timer)
+    }
+
     validate() {
 
         this.valid = this.isValid()
         if (this.valid) {
             this.deleteSave()
+            this.stopTimer()
             this.game_element.classList.add('ggez')
+            this.saveScore()
         } else {
             if (this.getLampCount() === 0) {
                 this.deleteSave()
             } else {
-                this.save()
-                this.game_element.classList.remove('ggez')
+                this.saveGame()
             }
+            this.game_element.classList.remove('ggez')
         }
         return this.valid
 

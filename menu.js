@@ -7,6 +7,7 @@ export class Menu {
     game = undefined
     name_editor = undefined
     stage_selector = undefined
+    countdown_page = undefined
 
     constructor(game = undefined) {
 
@@ -28,8 +29,7 @@ export class Menu {
 
         if (this.name_editor === undefined) {
 
-            const name_editor = create('div')
-            name_editor.classList.add('menu')
+            const name_editor = this.getMenuComponent()
 
             const greeting = create('h1')
             greeting.innerText = 'And you must be...?'
@@ -47,7 +47,7 @@ export class Menu {
                     if (name_input.value === "") {
                         greeting.innerText = "Don't be shy, tell me your name!"
                     } else {
-                        this.game.player_name = name_input.value.toUpperCase()
+                        this.game.setPlayerName(name_input.value.toUpperCase())
                         this.game.show(this.getStageSelector())
                     }
                 }
@@ -59,8 +59,7 @@ export class Menu {
 
         if (this.stage_selector === undefined) {
 
-            const stage_selector = create('div')
-            stage_selector.classList.add('menu')
+            const stage_selector = this.getMenuComponent()
             stage_selector.classList.add("stage-selector")
 
             this.game.saves = this.getSaveData()
@@ -80,8 +79,10 @@ export class Menu {
                 }
 
                 stage_button.addEventListener('click', () => {
-                    this.game.setStage(stage)
-                    this.game.show()
+                    this.countdown(0, () => {
+                        this.game.setStage(stage)
+                        this.game.show()
+                    })
                 })
 
                 stage_selector.appendChild(stage_button)
@@ -93,9 +94,35 @@ export class Menu {
 
         }
 
+        if (this.countdown_page === undefined) {
+            const countdown_page = this.getMenuComponent()
+            this.countdown_page = countdown_page
+        }
+
+    }
+
+    getMenuComponent() {
+        const menu = document.createElement('div')
+        menu.classList.add('menu')
+        return menu
+    }
+
+    countdown(seconds, fn) {
+        this.countdown_page.innerText = `<h1>Ready?</h1>`
+        for (let i = seconds + 1; i > 0; i--) {
+            setTimeout(() => {
+                this.countdown_page.innerHTML = `<h1>${i}</h1>`
+            }, (seconds - i + 1) * 1000 - 500)
+        }
+        this.game.show(this.countdown_page)
+        setTimeout((i) => { fn() }, (seconds) * 1000)
     }
 
     getSaveData() {
+        this.stages.forEach(stage => {
+            console.log(this.game.getCookie(stage.name))
+        })
+        /*
         if (document.cookie !== "") {
             return document.cookie.split(';').map(save => {
                 save = save.split('=')
@@ -108,6 +135,7 @@ export class Menu {
             })
         }
         return []
+        */
     }
 
     getNameEditor() {

@@ -62,7 +62,7 @@ body {
 }
 
 h1 {
-    margin-top: -100px;
+    margin: 0;
     font-size: 50px;
     color: white;
 }
@@ -135,6 +135,7 @@ button:active {
 }
 
 .game-container {
+    height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -146,21 +147,38 @@ button:active {
     width: 300px;
 }
 
-.game-container .actions {
-    margin-top: -50px;
+.play-area {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+}
+
+.play-area .actions {
     display: flex;
     justify-content: center;
     gap: 20px;
 }
 
-.game {
-    width: 600px;
-    height: 600px;
+.play-area .game {
+    height: 60vh;
+    aspect-ratio: 1 / 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: var(--cell-gap);
+}
+
+.play-area .timer {
+    order: 3;
+}
+
+.play-area .timer.happy {
+    color: --color-happy;
+    text-shadow: 0 0 10px var(--color-happy);
 }
 
 .paused {
@@ -173,6 +191,7 @@ button:active {
 }
 
 .board-row {
+    width: 100%;
     display: flex;
     flex-direction: row;
     gap: var(--cell-gap);
@@ -182,8 +201,10 @@ button:active {
     transition: all 0.4s ease-in-out;
     border: 1px transparent var(--color-batmans-parents);
     border-radius: 2px;
+    /*
     height: var(--cell-size);
     width: var(--cell-size);
+    */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -237,20 +258,11 @@ button:active {
     animation-direction: alternate;
 }
 
-.output {
-    color: --color-light;
-    text-align: center;
-}
-
-.output .variable {
-    display: flex;
-}
-
-.game-container.ggez .game .block {
+.ggez .game .block {
     box-shadow: 0 0 5px 5px var(--color-happy);
 }
 
-.game-container.ggez .game .lumos {
+.ggez .game .lumos {
     box-shadow: 0 0 5px 5px var(--color-happy);
     background-color: var(--color-happy);
 }
