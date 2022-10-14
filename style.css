@@ -1,0 +1,252 @@
+:root {
+
+    --cell-size: 50px;
+
+    --color-dark: rgb(45, 45, 45);
+    --color-moody: rgb(120, 120, 120);
+    --color-light: rgb(229, 229, 229);
+    --color-stressed: rgb(215, 67, 67);
+    --color-happy: rgb(90, 213, 66);
+    --color-lumos: rgb(255, 205, 23);
+    --color-holy-light: rgb(255, 140, 0);
+    --color-batmans-parents: rgba(0, 0, 0, 0);
+
+    --cell-gap: 5px;
+
+    --lumos: 0 0 3px 3px var(--color-lumos);
+}
+
+@keyframes ah-its-burning {
+    from {
+        background-color: var(--color-lumos);
+        box-shadow: 0 0 3px 3px var(--color-lumos);
+    }
+
+    to {
+        background-color: var(--color-holy-light);
+        box-shadow: 0 0 3px 3px var(--color-holy-light);
+    }
+}
+
+@keyframes prescription-glasses {
+    from {
+        filter: blur(0px);
+    }
+
+    to {
+        filter: blur(10px);
+    }
+}
+
+@keyframes embrace-the-void {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+* {
+    font-family: 'Silkscreen', cursive;
+    font-size: 30px;
+}
+
+body {
+    margin: 0;
+    background-color: var(--color-dark);
+    display: flex;
+    justify-content: center;
+    height: 100vh;
+}
+
+h1 {
+    margin-top: -100px;
+    font-size: 50px;
+    color: white;
+}
+
+p {
+    color: white;
+}
+
+input {
+    text-align: center;
+    color: var(--color-holy-light);
+    font-size: 50px;
+    font-weight: bold;
+    border: none;
+    border-bottom: 1px solid white;
+    background-color: var(--color-batmans-parents);
+}
+
+input:focus {
+    outline-width: 0;
+}
+
+button {
+    width: 300px;
+    font-size: 30px;
+    font-weight: bold;
+    border-radius: 3px;
+    border-width: 10px;
+    background-color: var(--color-light);
+}
+
+button:hover {
+    background-color: var(--color-lumos);
+    border-right: 10px solid var(--color-holy-light);
+    border-bottom: 10px solid var(--color-holy-light);
+    border-top: 10px solid yellow;
+    border-left: 10px solid yellow;
+}
+
+button:active {
+    border-right: 10px solid yellow;
+    border-bottom: 10px solid yellow;
+    border-top: 10px solid var(--color-holy-light);
+    border-left: 10px solid var(--color-holy-light);
+}
+
+.menu {
+    z-index: 10;
+    position: absolute;
+    width: calc(100% - 60px);
+    height: calc(100% - 60px);
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.fade {
+    animation-duration: 0.5s;
+    animation-name: embrace-the-void;
+    animation-iteration-count: 2;
+    animation-fill-mode: both;
+    animation-direction: alternate;
+}
+
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
+.game-container .pause-menu button {
+    width: 300px;
+}
+
+.game-container .actions {
+    margin-top: -50px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.game {
+    width: 600px;
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--cell-gap);
+}
+
+.paused {
+
+    animation-duration: 0.4s;
+    animation-name: prescription-glasses;
+    animation-fill-mode: forwards;
+    animation-iteration-count: 1;
+
+}
+
+.board-row {
+    display: flex;
+    flex-direction: row;
+    gap: var(--cell-gap);
+}
+
+.board-cell {
+    transition: all 0.4s ease-in-out;
+    border: 1px transparent var(--color-batmans-parents);
+    border-radius: 2px;
+    height: var(--cell-size);
+    width: var(--cell-size);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: pointer;
+}
+
+.board-cell.empty:hover {
+    transition: transform 0.2s;
+    transform: scale(1.1, 1.1);
+}
+
+.board-cell.empty:not(.lumos):hover {
+    background-color: var(--color-light);
+}
+
+.board-cell.block {
+    background-color: var(--color-dark);
+    color: var(--color-light);
+}
+
+.board-cell.block.happy {
+    z-index: 1;
+    background-color: var(--color-happy);
+    box-shadow: 0 0 5px 5px var(--color-happy);
+}
+
+.board-cell.block.stressed {
+    background-color: var(--color-stressed);
+}
+
+.board-cell.empty {
+    background-color: var(--color-moody);
+    color: var(--color-dark);
+}
+
+.board-cell.lumos {
+    z-index: 1;
+    background-color: var(--color-lumos);
+    box-shadow: var(--lumos);
+    color: white;
+    text-shadow: 0 0 10px var(--color-holy-light), 0 0 10px var(--color-holy-light);
+}
+
+.board-cell.lumos.stressed {
+    animation-duration: 1s;
+    animation-name: ah-its-burning;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+.output {
+    color: --color-light;
+    text-align: center;
+}
+
+.output .variable {
+    display: flex;
+}
+
+.game-container.ggez .game .block {
+    box-shadow: 0 0 5px 5px var(--color-happy);
+}
+
+.game-container.ggez .game .lumos {
+    box-shadow: 0 0 5px 5px var(--color-happy);
+    background-color: var(--color-happy);
+}
