@@ -3,6 +3,8 @@ export class Stage {
     matrix = undefined
     name = undefined
 
+    save = null
+
     constructor(stage = undefined) {
 
         this.matrix = JSON.parse(JSON.stringify(stage.matrix))
@@ -20,8 +22,13 @@ export class Stage {
 
     }
 
-    static import(data) {
-
+    export() {
+        return this.matrix.map((row, y) => {
+            const r = row.map((cell, x) => {
+                return cell.type === 'light' ? x : null
+            }).filter(cell => cell !== null)
+            return r.length > 0 ? [y, r] : null
+        }).filter(c => c !== null)
     }
 
     setMatrix(matrix) {
@@ -37,15 +44,6 @@ export class Stage {
 
     getName() {
         return this.name
-    }
-
-    export() {
-        return this.matrix.map((row, y) => {
-            const r = row.map((cell, x) => {
-                return cell.type === 'light' ? x : null
-            }).filter(cell => cell !== null)
-            return r.length > 0 ? [y, r] : null
-        }).filter(c => c !== null)
     }
 
 }

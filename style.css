@@ -4,7 +4,7 @@
 
     --color-dark: rgb(45, 45, 45);
     --color-moody: rgb(120, 120, 120);
-    --color-light: rgb(229, 229, 229);
+    --color-light: rgb(199, 199, 199);
     --color-stressed: rgb(215, 67, 67);
     --color-happy: rgb(90, 213, 66);
     --color-lumos: rgb(255, 205, 23);
@@ -91,6 +91,10 @@ button {
     font-weight: bold;
     border-radius: 3px;
     border-width: 10px;
+    border-right: 10px solid grey;
+    border-bottom: 10px solid grey;
+    border-top: 10px solid white;
+    border-left: 10px solid white;
     background-color: var(--color-light);
 }
 

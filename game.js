@@ -18,6 +18,8 @@ export class Game {
     player_name = undefined // probably some awesome dude (or gal)
     valid = false // game solve status
 
+    saves = [] // self-explanatory
+
     flow_rate = 50 // light flow speed (ms)
 
     constructor(container = undefined) {
@@ -80,11 +82,28 @@ export class Game {
     }
 
     save() {
-        document.cookie = `${this.stage.name}=${JSON.stringify(this.stage.export())};max-age=10843200;SameSite=None;`
+        const d = new Date();
+        d.setTime(d.getTime() + (30 * 24 * 60 * 60 * 1000));
+        const expires = "expires=";
+        document.cookie = this.stage.name + "=" + JSON.stringify(this.stage.export()) + "; " + expires;
     }
 
     deleteSave() {
         document.cookie = `${this.stage.name}=null; expires=0`
+    }
+
+    loadSave() {
+        if (this.saves === undefined) return
+        const save = this.saves.find(save => save.name === this.stage.name)
+        if (save === undefined) return
+        let i = 0
+        save.data.forEach(y => {
+            y[1].forEach(x => {
+                setTimeout(() => {
+                    this.toggleLamp(this.stage.matrix[y[0]][x])
+                }, (100 * i++))
+            })
+        })
     }
 
     restart() {
@@ -149,6 +168,8 @@ export class Game {
         }
 
         this.game_element.appendChild(game)
+
+        setTimeout(() => { this.loadSave() }, 500)
 
         this.validate()
 
@@ -258,6 +279,12 @@ export class Game {
         return neighbours
     }
 
+    getLampCount() {
+        return this.stage.matrix.map(row => {
+            return row.filter(cell => cell.type === type_light).length
+        }).reduce((last, sum) => last + sum, 0)
+    }
+
     illuminate(cell, delay = 0) {
         cell.value++
         if (cell.type == type_light && cell.value > 1) {
@@ -304,8 +331,12 @@ export class Game {
             this.deleteSave()
             this.game_element.classList.add('ggez')
         } else {
-            this.save()
-            this.game_element.classList.remove('ggez')
+            if (this.getLampCount() === 0) {
+                this.deleteSave()
+            } else {
+                this.save()
+                this.game_element.classList.remove('ggez')
+            }
         }
         return this.valid
 

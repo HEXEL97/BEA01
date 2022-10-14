@@ -63,7 +63,7 @@ export class Menu {
             stage_selector.classList.add('menu')
             stage_selector.classList.add("stage-selector")
 
-            const saves = this.getSaveData()
+            this.game.saves = this.getSaveData()
 
             this.stages.forEach((stage) => {
 
@@ -71,15 +71,13 @@ export class Menu {
 
                 stage = new Stage(stage)
 
-                const save = saves.find(save => save.name === stage.name)
+                const save = this.game.saves.find(save => save.name === stage.name)
 
                 if (save !== undefined) {
-                    console.log(save)
                     stage_button.innerText = `${stage.name} (continue)`
                 } else {
                     stage_button.innerText = stage.name
                 }
-
 
                 stage_button.addEventListener('click', () => {
                     this.game.setStage(stage)
@@ -106,7 +104,7 @@ export class Menu {
                     data: save[1] !== 'null' ? JSON.parse(save[1]) : null,
                 }
             }).filter(save => {
-                return save.data.length !== 0
+                return save.data !== null
             })
         }
         return []
