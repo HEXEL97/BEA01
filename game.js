@@ -113,7 +113,7 @@ export class Game {
 
     getCookie(name) {
         const value = document.cookie.split('; ').map(cookie => { return { name: cookie.split('=')[0], value: cookie.split('=')[1] } }).filter(cookie => cookie.name === name)
-        return value.length > 0 ? JSON.parse(value) : undefined
+        return value.length > 0 ? (value instanceof Object ? value : JSON.parse(value)) : undefined
     }
 
     saveGame() {

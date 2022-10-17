@@ -120,7 +120,7 @@ export class Menu {
 
     getSaveData() {
         this.stages.forEach(stage => {
-            console.log(this.game.getCookie(stage.name))
+            const save = this.game.getCookie(stage.name)[0].value
         })
         /*
         if (document.cookie !== "") {
