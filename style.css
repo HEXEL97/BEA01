@@ -126,6 +126,10 @@ button:active {
     gap: 10px;
 }
 
+.menu button {
+    width: 80%;
+}
+
 .fade {
     animation-duration: 0.5s;
     animation-name: embrace-the-void;

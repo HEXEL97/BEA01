@@ -1,5 +1,6 @@
 import { Menu } from "./menu.js"
 import { Stage } from "./stage.js"
+import { Tools } from "./tools.js"
 
 const type_block = 'block'
 const type_empty = 'empty'
@@ -22,8 +23,6 @@ export class Game {
     timer = false // it's like a watch!
     seconds = 0 // seconds wasted
 
-    saves = [] // self-explanatory
-
     flow_rate = 50 // light flow speed (ms)
 
     constructor(container = undefined) {
@@ -42,7 +41,8 @@ export class Game {
         const back_button = document.createElement('button')
         back_button.innerText = "< back"
         back_button.addEventListener('click', () => {
-            this.stopTimer()
+            this.saveGame()
+            this.stopTimer(true)
             this.show(this.menu.getStageSelector())
         })
         action_buttons.appendChild(back_button)
@@ -76,8 +76,8 @@ export class Game {
     }
 
     initialize() {
-        this.player_name = this.getCookie('playername')
-        if (this.player_name === undefined) {
+        this.player_name = Tools.getCookie('playername')
+        if (this.player_name === null) {
             this.show(this.menu.getNameEditor())
         } else {
             this.show(this.menu.getStageSelector())
@@ -86,7 +86,7 @@ export class Game {
 
     setPlayerName(name) {
         this.player_name = name
-        this.setCookie('playername', this.player_name)
+        Tools.setCookie('playername', this.player_name)
     }
 
     setStage(stage, default_stage = undefined) {
@@ -104,31 +104,23 @@ export class Game {
 
     }
 
-    setCookie(name, value) {
-        const d = new Date();
-        d.setTime(d.getTime() + (30 * 24 * 60 * 60 * 1000));
-        const expires = "expires=";
-        document.cookie = name + "=" + JSON.stringify(value) + "; " + expires;
-    }
-
-    getCookie(name) {
-        const value = document.cookie.split('; ').map(cookie => { return { name: cookie.split('=')[0], value: cookie.split('=')[1] } }).filter(cookie => cookie.name === name)
-        return value.length > 0 ? (value instanceof Object ? value : JSON.parse(value)) : undefined
-    }
-
     saveGame() {
-        this.setCookie(this.stage.name, this.stage.export())
+        Tools.setCookie(this.stage.name, {
+            lamp_matrix: this.stage.export(),
+            seconds: this.seconds,
+        })
     }
 
     saveScore() {
-        let scoreboard = this.getCookie('scoreboard')
+        //let scoreboard = Tools.getCookie('scoreboard')
+
+        let scoreboard
 
         if (scoreboard === undefined) scoreboard = []
         if (scoreboard[this.stage.name] === undefined) scoreboard[this.stage.name] = []
-
         scoreboard[this.stage.name].push({ time: this.seconds, name: this.player_name })
 
-        this.setCookie('scoreboard', scoreboard)
+        console.log(scoreboard)
     }
 
     deleteSave() {
@@ -136,11 +128,11 @@ export class Game {
     }
 
     loadSave() {
-        if (this.saves === undefined) return
-        const save = this.saves.find(save => save.name === this.stage.name)
-        if (save === undefined) return
+        const save = this.stage.getLampMatrix()
+        this.seconds = this.stage.getSaveSeconds()
+        if (save === null) return
         let i = 0
-        save.data.forEach(y => {
+        save.forEach(y => {
             y[1].forEach(x => {
                 setTimeout(() => {
                     this.toggleLamp(this.stage.matrix[y[0]][x])
@@ -218,9 +210,10 @@ export class Game {
 
         this.game_element.appendChild(game)
 
-        setTimeout(() => { this.loadSave() }, 500)
-
-        this.startTimer()
+        setTimeout(() => {
+            this.loadSave()
+            this.startTimer(this.seconds)
+        }, 500)
 
         this.validate()
 
@@ -330,12 +323,6 @@ export class Game {
         return neighbours
     }
 
-    getLampCount() {
-        return this.stage.matrix.map(row => {
-            return row.filter(cell => cell.type === type_light).length
-        }).reduce((last, sum) => last + sum, 0)
-    }
-
     illuminate(cell, delay = 0) {
         cell.value++
         if (cell.type == type_light && cell.value > 1) {
@@ -378,21 +365,16 @@ export class Game {
     startTimer(seconds = 0) {
         this.seconds = seconds
         this.timer_element.classList.remove('happy')
-        const toTime = (seconds, units = [60, 60, 24]) => {
-            const unit = units.shift()
-            let time = Math.floor(seconds % unit).toString()
-            time = '0'.repeat(unit.toString().length - time.length) + time
-            return (units.length > 0) ? time = toTime(Math.floor(seconds / unit), units) + ':' + time : time
-        }
-        this.timer_element.innerHTML = `<h1>${toTime(seconds)}</h1>`
+        this.timer_element.innerHTML = `<h1>${Tools.toTime(seconds)}</h1>`
         this.timer = setTimeout(() => {
             this.startTimer(seconds + 1)
         }, 1000)
     }
 
-    stopTimer() {
+    stopTimer(reset = false) {
         this.timer_element.classList.add('happy')
         clearTimeout(this.timer)
+        if (reset) this.seconds = 0
     }
 
     validate() {
@@ -404,7 +386,7 @@ export class Game {
             this.game_element.classList.add('ggez')
             this.saveScore()
         } else {
-            if (this.getLampCount() === 0) {
+            if (this.stage.getLampCount() === 0) {
                 this.deleteSave()
             } else {
                 this.saveGame()

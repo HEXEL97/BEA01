@@ -1,6 +1,9 @@
 import { Game } from "./game.js"
 import { Stage } from "./stage.js"
+import { Tools } from "./tools.js"
 import * as stages_import from "./stages.js"
+
+const create = (type) => { return document.createElement(type) }
 
 export class Menu {
 
@@ -19,14 +22,36 @@ export class Menu {
 
         this.stages = Object.values(stages_import)
 
-        this.renderComponents()
-
     }
 
-    renderComponents() {
+    getMenuComponent() {
+        const menu = document.createElement('div')
+        menu.classList.add('menu')
+        return menu
+    }
 
-        const create = (type) => { return document.createElement(type) }
+    countdown(seconds, fn) {
+        if (this.countdown_page === undefined) {
+            const countdown_page = this.getMenuComponent()
+            this.countdown_page = countdown_page
+        }
+        this.countdown_page.innerText = `<h1>Ready?</h1>`
+        for (let i = seconds + 1; i > 0; i--) {
+            setTimeout(() => {
+                this.countdown_page.innerHTML = `<h1>${i}</h1>`
+            }, (seconds - i + 1) * 1000 - 500)
+        }
+        this.game.show(this.countdown_page)
+        setTimeout((i) => { fn() }, (seconds) * 1000)
+    }
 
+    getSaveData() {
+        return this.stages.map(stage => {
+            return { name: stage.name, data: Tools.getCookie(stage.name) }
+        }).filter(save => save !== null)
+    }
+
+    getNameEditor() {
         if (this.name_editor === undefined) {
 
             const name_editor = this.getMenuComponent()
@@ -56,95 +81,45 @@ export class Menu {
             this.name_editor = name_editor
 
         }
-
-        if (this.stage_selector === undefined) {
-
-            const stage_selector = this.getMenuComponent()
-            stage_selector.classList.add("stage-selector")
-
-            this.game.saves = this.getSaveData()
-
-            this.stages.forEach((stage) => {
-
-                const stage_button = create('button')
-
-                stage = new Stage(stage)
-
-                const save = this.game.saves.find(save => save.name === stage.name)
-
-                if (save !== undefined) {
-                    stage_button.innerText = `${stage.name} (continue)`
-                } else {
-                    stage_button.innerText = stage.name
-                }
-
-                stage_button.addEventListener('click', () => {
-                    this.countdown(0, () => {
-                        this.game.setStage(stage)
-                        this.game.show()
-                    })
-                })
-
-                stage_selector.appendChild(stage_button)
-
-            })
-
-
-            this.stage_selector = stage_selector
-
-        }
-
-        if (this.countdown_page === undefined) {
-            const countdown_page = this.getMenuComponent()
-            this.countdown_page = countdown_page
-        }
-
-    }
-
-    getMenuComponent() {
-        const menu = document.createElement('div')
-        menu.classList.add('menu')
-        return menu
-    }
-
-    countdown(seconds, fn) {
-        this.countdown_page.innerText = `<h1>Ready?</h1>`
-        for (let i = seconds + 1; i > 0; i--) {
-            setTimeout(() => {
-                this.countdown_page.innerHTML = `<h1>${i}</h1>`
-            }, (seconds - i + 1) * 1000 - 500)
-        }
-        this.game.show(this.countdown_page)
-        setTimeout((i) => { fn() }, (seconds) * 1000)
-    }
-
-    getSaveData() {
-        this.stages.forEach(stage => {
-            const save = this.game.getCookie(stage.name)[0].value
-        })
-        /*
-        if (document.cookie !== "") {
-            return document.cookie.split(';').map(save => {
-                save = save.split('=')
-                return {
-                    name: save[0].replace(' ', ''),
-                    data: save[1] !== 'null' ? JSON.parse(save[1]) : null,
-                }
-            }).filter(save => {
-                return save.data !== null
-            })
-        }
-        return []
-        */
-    }
-
-    getNameEditor() {
         return this.name_editor
     }
 
     getStageSelector() {
-        this.stage_selector = undefined
-        this.renderComponents()
+
+        const stage_selector = this.getMenuComponent()
+        stage_selector.classList.add("stage-selector")
+
+        const saves = this.getSaveData()
+
+        this.stages.forEach((stage) => {
+
+            const stage_button = create('button')
+
+            stage = new Stage(stage)
+
+            const save = saves.find(save => save.name === stage.name)
+
+            if (save !== null) {
+                stage.setSaveData(save)
+                stage_button.innerText = `${stage.name} (${Tools.toTime(stage.getSaveSeconds())})`
+            } else {
+                stage_button.innerText = stage.name
+            }
+
+            stage_button.addEventListener('click', () => {
+                this.countdown(0, () => {
+                    this.game.setStage(stage)
+                    this.game.show()
+                })
+            })
+
+            stage_selector.appendChild(stage_button)
+
+        })
+
+
+        this.stage_selector = stage_selector
+
         return this.stage_selector
     }
 

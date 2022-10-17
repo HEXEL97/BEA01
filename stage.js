@@ -1,9 +1,14 @@
+const type_block = 'block'
+const type_empty = 'empty'
+const type_light = 'light'
+
 export class Stage {
 
     matrix = undefined
     name = undefined
 
-    save = null
+    lamp_matrix = null
+    time = 0
 
     constructor(stage = undefined) {
 
@@ -42,8 +47,28 @@ export class Stage {
         return this.matrix
     }
 
+    getLampCount() {
+        return this.matrix.map(row => {
+            return row.filter(cell => cell.type === type_light).length
+        }).reduce((last, sum) => last + sum, 0)
+    }
+
     getName() {
         return this.name
+    }
+
+    setSaveData(save) {
+        //console.log(save)
+        this.lamp_matrix = save.lamp_matrix
+        this.seconds = save.seconds
+    }
+
+    getLampMatrix() {
+        return this.save_data ?? null
+    }
+
+    getSaveSeconds() {
+        return this.seconds ?? 0
     }
 
 }
