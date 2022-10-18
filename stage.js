@@ -58,13 +58,12 @@ export class Stage {
     }
 
     setSaveData(save) {
-        //console.log(save)
-        this.lamp_matrix = save.lamp_matrix
-        this.seconds = save.seconds
+        this.lamp_matrix = save.data.lamp_matrix
+        this.seconds = save.data.seconds
     }
 
     getLampMatrix() {
-        return this.save_data ?? null
+        return this.lamp_matrix ?? null
     }
 
     getSaveSeconds() {

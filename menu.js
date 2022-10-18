@@ -99,15 +99,16 @@ export class Menu {
 
             const save = saves.find(save => save.name === stage.name)
 
-            if (save !== null) {
+            if (save.data !== null) {
                 stage.setSaveData(save)
-                stage_button.innerText = `${stage.name} (${Tools.toTime(stage.getSaveSeconds())})`
+                console.log(save)
+                stage_button.innerText = `${stage.name} (${Tools.toTime(stage.getSaveSeconds())} ${save.player_name})`
             } else {
                 stage_button.innerText = stage.name
             }
 
             stage_button.addEventListener('click', () => {
-                this.countdown(0, () => {
+                this.countdown(3, () => {
                     this.game.setStage(stage)
                     this.game.show()
                 })

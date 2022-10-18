@@ -1,10 +1,10 @@
 export class Tools {
 
     static setCookie(name, value, days = 30) {
-        const d = new Date();
-        d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
-        const expires = "expires=";
-        document.cookie = name + "=" + JSON.stringify(value) + "; " + expires;
+        const d = new Date()
+        d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000))
+        const expires = (days > 0) ? "expires=" + d.toUTCString() : "max-age=0"
+        document.cookie = name + "=" + JSON.stringify(value) + "; " + expires
     }
 
     static getCookie(name) {

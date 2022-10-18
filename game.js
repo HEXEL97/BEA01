@@ -1,4 +1,5 @@
 import { Menu } from "./menu.js"
+import { ScoreBoard } from "./scoreboard.js"
 import { Stage } from "./stage.js"
 import { Tools } from "./tools.js"
 
@@ -14,7 +15,8 @@ export class Game {
     stage = undefined // selected stage (level) of the game
     stage_default = undefined // stage default state for reload purposes
 
-    game_element = undefined // element of the play area
+    game_container = undefined // element of all the game elements
+    play_area = undefined // element for the game itself
     timer_element = undefined // display for time wasted
 
     player_name = undefined // probably some awesome dude (or gal)
@@ -32,8 +34,12 @@ export class Game {
         }
 
         this.container = container
-        this.game_element = document.createElement('div')
-        this.game_element.classList.add('play-area')
+
+        this.game_container = document.createElement('div')
+        this.game_container.classList.add('game-wrapper')
+
+        this.play_area = document.createElement('div')
+        this.play_area.classList.add('play-area')
 
         const action_buttons = document.createElement('div')
         action_buttons.classList.add('actions')
@@ -41,7 +47,6 @@ export class Game {
         const back_button = document.createElement('button')
         back_button.innerText = "< back"
         back_button.addEventListener('click', () => {
-            this.saveGame()
             this.stopTimer(true)
             this.show(this.menu.getStageSelector())
         })
@@ -52,19 +57,26 @@ export class Game {
         restart_button.addEventListener('click', () => { this.restart() })
         action_buttons.appendChild(restart_button)
 
-        this.game_element.appendChild(action_buttons)
+        this.play_area.appendChild(action_buttons)
 
         this.timer_element = document.createElement('h1')
         this.timer_element.classList.add('timer')
         this.timer_element.innerText = '00:00'
 
-        this.game_element.appendChild(this.timer_element)
+        this.play_area.appendChild(this.timer_element)
+
+        this.game_container.appendChild(this.play_area)
+
+        this.scoreboard_element = document.createElement('div')
+        this.scoreboard_element.classList.add('scoreboard')
+
+        this.game_container.appendChild(this.scoreboard_element)
 
         this.menu = new Menu(this)
 
     }
 
-    show(element = this.game_element) {
+    show(element = this.game_container) {
         this.container.classList.add('fade')
         setTimeout(() => {
             this.container.innerHTML = null
@@ -111,20 +123,8 @@ export class Game {
         })
     }
 
-    saveScore() {
-        //let scoreboard = Tools.getCookie('scoreboard')
-
-        let scoreboard
-
-        if (scoreboard === undefined) scoreboard = []
-        if (scoreboard[this.stage.name] === undefined) scoreboard[this.stage.name] = []
-        scoreboard[this.stage.name].push({ time: this.seconds, name: this.player_name })
-
-        console.log(scoreboard)
-    }
-
     deleteSave() {
-        document.cookie = `${this.stage.name}=null; expires=0`
+        Tools.setCookie(this.stage.name, null, 0)
     }
 
     loadSave() {
@@ -147,6 +147,34 @@ export class Game {
             this.setStage(this.stage_default)
         }, 500)
         this.show()
+    }
+
+    saveScore() {
+
+        const scoreboard = ScoreBoard.saveScore(this.stage.name, this.player_name, this.seconds)
+
+        this.updateScore()
+
+    }
+
+    updateScore() {
+
+        this.scoreboard_element.innerHTML = null
+
+        const scoreboard = ScoreBoard.getScores(this.stage.name);
+
+        if (scoreboard !== undefined) {
+
+            const scores = scoreboard.scores
+            scores.forEach(score => {
+                const score_element = document.createElement('div')
+                score_element.classList.add('score')
+                score_element.innerHTML = `<div>${score.player_name}</div><div>${Tools.toTime(score.seconds)}</div>`
+                this.scoreboard_element.appendChild(score_element)
+            })
+        }
+
+
     }
 
     render() {
@@ -203,12 +231,14 @@ export class Game {
 
         })
 
-        const prev_render = this.game_element.querySelector('#game')
+        const prev_render = this.game_container.querySelector('#game')
         if (prev_render !== null) {
             prev_render.remove()
         }
 
-        this.game_element.appendChild(game)
+        this.play_area.appendChild(game)
+
+        this.updateScore()
 
         setTimeout(() => {
             this.loadSave()
@@ -378,20 +408,19 @@ export class Game {
     }
 
     validate() {
-
         this.valid = this.isValid()
         if (this.valid) {
-            this.deleteSave()
+            this.game_container.classList.add('ggez')
             this.stopTimer()
-            this.game_element.classList.add('ggez')
             this.saveScore()
+            this.deleteSave()
         } else {
             if (this.stage.getLampCount() === 0) {
                 this.deleteSave()
             } else {
                 this.saveGame()
             }
-            this.game_element.classList.remove('ggez')
+            this.game_container.classList.remove('ggez')
         }
         return this.valid
 

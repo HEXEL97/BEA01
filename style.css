@@ -151,10 +151,16 @@ button:active {
     width: 300px;
 }
 
+.game-container .game-wrapper {
+    display: flex;
+    gap: 30px
+}
+
 .play-area {
     height: 100%;
     display: flex;
     flex-direction: column;
+    flex-wrap: wrap;
     gap: 20px;
     justify-content: center;
     align-items: center;
@@ -269,4 +275,28 @@ button:active {
 .ggez .game .lumos {
     box-shadow: 0 0 5px 5px var(--color-happy);
     background-color: var(--color-happy);
+}
+
+.scoreboard {
+    transition: all 0.5s ease-in-out;
+    order: 4;
+    display: flex;
+    flex-direction: column;
+    max-width: 0px;
+    min-width: 0px;
+    max-height: 80vh;
+    overflow-y: scroll;
+    color: var(--color-light);
+    gap: 10px;
+}
+
+.ggez .scoreboard {
+    max-width: 300px;
+    min-width: 300px;
+    padding: 20px;
+}
+
+.scoreboard .score {
+    display: flex;
+    justify-content: space-between;
 }
