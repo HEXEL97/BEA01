@@ -1,6 +1,7 @@
 import { Game } from "./game.js"
 import { Stage } from "./stage.js"
 import { Tools } from "./tools.js"
+import { ScoreBoard } from "./scoreboard.js"
 import * as stages_import from "./stages.js"
 
 const create = (type) => { return document.createElement(type) }
@@ -57,10 +58,11 @@ export class Menu {
             const name_editor = this.getMenuComponent()
 
             const greeting = create('h1')
-            greeting.innerText = 'And you must be...?'
+            greeting.innerText = this.game.player_name === null ? 'And you must be...?' : 'A new challenger aproaches!'
             name_editor.appendChild(greeting)
 
             const name_input = create('input')
+            name_input.maxLength = 6
             name_editor.appendChild(name_input)
 
             const hint = create('p')
@@ -89,6 +91,61 @@ export class Menu {
         const stage_selector = this.getMenuComponent()
         stage_selector.classList.add("stage-selector")
 
+        const stage_container = document.createElement('div')
+        stage_container.classList.add('stage-container')
+
+        const stage_preview = document.createElement('div')
+        stage_preview.classList.add('stage-preview')
+
+        const setPreview = (stage, save) => {
+
+            stage_preview.innerHTML = null
+
+            stage_preview.innerHTML = `<h1>${stage.name}</h1>`
+
+            const new_game_button = document.createElement('button')
+            new_game_button.innerText = 'new game'
+            new_game_button.addEventListener('click', () => {
+                this.countdown(3, () => {
+                    this.game.setStage(stage)
+                    this.game.show()
+                })
+            })
+            stage_preview.appendChild(new_game_button)
+
+            if (save.data !== null) {
+                const continue_game_button = document.createElement('button')
+                continue_game_button.innerText = 'continue game'
+                continue_game_button.addEventListener('click', () => {
+                    this.countdown(3, () => {
+                        stage.setSaveData(save)
+                        this.game.setStage(stage)
+                        this.game.show()
+                    })
+                })
+                stage_preview.appendChild(continue_game_button)
+            }
+
+            const scoreboard_element = document.createElement('div')
+            scoreboard_element.classList.add('scoreboard')
+            scoreboard_element.classList.add('preview')
+            const scoreboard = ScoreBoard.getScores(stage.name)
+
+            if (scoreboard !== undefined) {
+
+                const scores = scoreboard.scores
+                scores.slice(0, 3).forEach((score, index) => {
+                    const score_element = document.createElement('div')
+                    score_element.classList.add('score')
+                    score_element.innerHTML = `<div>#${index + 1}</div><div>${score.player_name}</div><div>${Tools.toTime(score.seconds)}</div>`
+                    scoreboard_element.appendChild(score_element)
+                })
+            }
+
+            stage_preview.appendChild(scoreboard_element)
+
+        }
+
         const saves = this.getSaveData()
 
         this.stages.forEach((stage) => {
@@ -99,24 +156,30 @@ export class Menu {
 
             const save = saves.find(save => save.name === stage.name)
 
-            if (save.data !== null) {
-                stage.setSaveData(save)
-                console.log(save)
-                stage_button.innerText = `${stage.name} (${Tools.toTime(stage.getSaveSeconds())} ${save.player_name})`
-            } else {
-                stage_button.innerText = stage.name
-            }
+            stage_button.innerText = stage.name
 
             stage_button.addEventListener('click', () => {
-                this.countdown(3, () => {
-                    this.game.setStage(stage)
-                    this.game.show()
+                document.querySelectorAll('button.active').forEach(button => {
+                    button.classList.remove('active')
                 })
+                stage_button.classList.add('active')
+                setPreview(stage, save)
             })
 
-            stage_selector.appendChild(stage_button)
+            stage_container.appendChild(stage_button)
 
         })
+
+        stage_selector.appendChild(stage_container)
+        stage_selector.appendChild(stage_preview)
+
+        const player_name = document.createElement('div')
+        player_name.classList.add('player-name')
+        player_name.innerHTML = `<h1>${this.game.player_name}</h1>`
+        player_name.addEventListener('click', () => {
+            this.game.show(this.getNameEditor())
+        })
+        stage_selector.appendChild(player_name)
 
 
         this.stage_selector = stage_selector

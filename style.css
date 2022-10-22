@@ -98,7 +98,8 @@ button {
     background-color: var(--color-light);
 }
 
-button:hover {
+button:hover,
+button.active {
     background-color: var(--color-lumos);
     border-right: 10px solid var(--color-holy-light);
     border-bottom: 10px solid var(--color-holy-light);
@@ -138,7 +139,9 @@ button:active {
     animation-direction: alternate;
 }
 
-.game-container {
+.game-container,
+.stage-container,
+.stage-preview {
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -147,8 +150,30 @@ button:active {
     gap: 20px;
 }
 
-.game-container .pause-menu button {
-    width: 300px;
+.game-container .player-name {
+    position: absolute;
+    top: 0px
+}
+
+.game-container .player-name:hover {
+    cursor: pointer;
+    text-shadow: 0 0 10px var(--color-holy-light);
+}
+
+.stage-selector {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+}
+
+.stage-selector .stage-preview {
+    display: flex;
+    flex-direction: column;
+}
+
+.stage-selector button {
+    width: 400px;
 }
 
 .game-container .game-wrapper {
@@ -290,9 +315,10 @@ button:active {
     gap: 10px;
 }
 
-.ggez .scoreboard {
-    max-width: 300px;
-    min-width: 300px;
+.ggez .scoreboard,
+.scoreboard.preview {
+    max-width: 400px;
+    min-width: 400px;
     padding: 20px;
 }
 
