@@ -70,4 +70,8 @@ export class Stage {
         return this.seconds ?? 0
     }
 
+    static create() {
+
+    }
+
 }
