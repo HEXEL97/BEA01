@@ -135,7 +135,7 @@ export class Game {
 
     }
 
-    render(_callback) {
+    render(_callback = () => { }) {
 
         this.ui.renderGameElement()
 
@@ -152,35 +152,71 @@ export class Game {
 
     handleClick(cell) {
 
-        this.setType(cell, cell.type === type_empty ? type_light : type_empty)
+        switch (this.mode) {
+            case mode_play:
+                this.setType(cell, cell.type === type_empty ? type_light : type_empty)
 
-        const spread = (origin, fn) => {
+                const spread = (origin, fn) => {
 
-            let directions = this.getRange(origin)
-            for (let i = 0; i < Math.max(...directions.map(direction => direction.length)); i++) {
-                directions.forEach(direction => {
-                    if (direction[i] !== undefined) {
-                        fn(direction[i], i * this.flow_rate)
+                    let directions = this.getRange(origin)
+                    for (let i = 0; i < Math.max(...directions.map(direction => direction.length)); i++) {
+                        directions.forEach(direction => {
+                            if (direction[i] !== undefined) {
+                                fn(direction[i], i * this.flow_rate)
+                            }
+                        })
                     }
-                })
+
+                }
+
+                if (cell.type === type_light) {
+
+                    spread(cell, this.illuminate)
+                    this.getNeighbours(cell).filter(neighbour => neighbour.type === type_block).forEach(block => { this.decrease(block) })
+
+                } else {
+
+                    spread(cell, this.extinguish)
+                    this.getNeighbours(cell).filter(neighbour => neighbour.type === type_block).forEach(block => { this.increase(block) })
+
+                }
+
+                this.validate()
+                break
+            case mode_edit:
+                switch (cell.type) {
+                    case type_empty:
+                        cell.type = type_block
+                        cell.value = null
+                        break
+                    case type_block:
+                        if (cell.value < 4) {
+                            cell.value++
+                        } else {
+                            cell.value = 0
+                            cell.type = type_empty
+                        }
+                        break
+                }
+                this.render()
+                break
+        }
+    }
+
+    handleKeyDown(keycode) {
+        if (this.mode == mode_edit) {
+            switch (keycode) {
+                case 'ArrowUp':
+                    this.stage.grow()
+                    break
+                case 'ArrowDown':
+                    this.stage.shrink()
+                    break
+                default:
+                    console.log(keycode)
             }
-
+            this.render()
         }
-
-        if (cell.type === type_light) {
-
-            spread(cell, this.illuminate)
-            this.getNeighbours(cell).filter(neighbour => neighbour.type === type_block).forEach(block => { this.decrease(block) })
-
-        } else {
-
-            spread(cell, this.extinguish)
-            this.getNeighbours(cell).filter(neighbour => neighbour.type === type_block).forEach(block => { this.increase(block) })
-
-        }
-
-        this.validate()
-
     }
 
     setType(cell, type) {
@@ -435,6 +471,10 @@ class GameUI {
 
         this.stages = Object.values(stages_import)
 
+        window.addEventListener('keydown', (event) => {
+            this.game.handleKeyDown(event.code)
+        })
+
     }
 
     view(element) {
@@ -481,6 +521,7 @@ class GameUI {
         this.play_area = document.createElement('div')
         this.play_area.id = 'game'
         this.play_area.classList.add('game')
+
         this.game_element.appendChild(this.play_area)
 
     }
@@ -502,6 +543,8 @@ class GameUI {
                 cell.element.classList.add('board-cell')
                 cell.element.style.width = width
 
+                cell.element.addEventListener('click', () => { this.game.handleClick(cell) })
+
                 switch (cell.type) {
                     case type_block:
                         cell.element.classList.add('block')
@@ -518,7 +561,6 @@ class GameUI {
                         }
                     case type_empty:
                         cell.element.classList.add('empty')
-                        cell.element.addEventListener('click', () => { this.game.handleClick(cell) })
                         if (cell.value > 0) {
                             cell.element.classList.add('lumos')
                         }
@@ -717,6 +759,7 @@ class GameUI {
 
         stage_create.addEventListener('click', () => {
             this.game.setMode(mode_edit)
+            this.game.setStage(Stage.create(5, 5))
             this.view(this.game_container)
         })
 

@@ -13,6 +13,12 @@ export class Stage {
     constructor(stage = undefined) {
 
         this.matrix = JSON.parse(JSON.stringify(stage.matrix))
+        this.setCoords()
+        this.name = stage.name
+
+    }
+
+    setCoords() {
         let y = 0
         let x = 0
         this.matrix.map((row) => {
@@ -23,8 +29,21 @@ export class Stage {
             y++
             x = 0
         })
-        this.name = stage.name
+    }
 
+    static create(height, width) {
+        const stage = {
+            name: 'custom',
+            matrix: [],
+        }
+        for (let i = 0; i < height; i++) {
+            const row = []
+            for (let j = 0; j < width; j++) {
+                row.push({ type: type_empty, value: 0 })
+            }
+            stage.matrix.push(row)
+        }
+        return new Stage(stage)
     }
 
     export() {
@@ -70,8 +89,44 @@ export class Stage {
         return this.seconds ?? 0
     }
 
-    static create() {
+    map(fn) {
+        this.matrix = this.matrix.map((row) => {
+            return row.map((cell) => {
+                return fn(cell)
+            })
+        })
+    }
 
+    sanitize() {
+        this.map((cell) => {
+            return cell.type === type_block ? cell : { type: type_empty, value: 0 }
+        })
+    }
+
+    grow() {
+        if (this.matrix.length < 15) {
+            this.sanitize()
+            const new_row = [];
+            for (let i = 0; i < this.matrix.length; i++) {
+                new_row.push({ type: type_empty, value: 0 })
+            }
+            this.matrix.push(new_row)
+            this.matrix.forEach(row => {
+                row.push({ type: type_empty, value: 0 })
+            });
+            this.setCoords()
+        }
+    }
+
+    shrink() {
+        if (this.matrix.length > 3) {
+            this.sanitize()
+            this.matrix.splice(-1)
+            this.matrix.forEach(row => {
+                row.splice(-1)
+            });
+            this.setCoords()
+        }
     }
 
 }
