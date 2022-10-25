@@ -213,6 +213,18 @@ export class Game {
                     this.stage.shrink()
                     break
                 default:
+                case 'Space':
+                    switch (this.mode) {
+                        case mode_play:
+                            this.mode = mode_edit
+                            this.stage.sanitize()
+                            this.ui.render()
+                            break
+                        case mode_edit:
+                            this.mode = mode_play
+                            break
+                    }
+                    break
                     console.log(keycode)
             }
             this.render()
