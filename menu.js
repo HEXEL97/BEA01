@@ -91,8 +91,8 @@ export class Menu {
         const stage_selector = this.getMenuComponent()
         stage_selector.classList.add("stage-selector")
 
-        const stage_container = document.createElement('div')
-        stage_container.classList.add('stage-container')
+        const stage_list = document.createElement('div')
+        stage_list.classList.add('stage-container')
 
         const stage_preview = document.createElement('div')
         stage_preview.classList.add('stage-preview')
@@ -166,11 +166,21 @@ export class Menu {
                 setPreview(stage, save)
             })
 
-            stage_container.appendChild(stage_button)
+            stage_list.appendChild(stage_button)
 
         })
 
-        stage_selector.appendChild(stage_container)
+        const stage_create = create('button')
+
+        stage_create.innerText = '+ create new'
+
+        stage_create.addEventListener('click', () => {
+            this.game.show()
+        })
+
+        stage_list.append(stage_create)
+
+        stage_selector.appendChild(stage_list)
         stage_selector.appendChild(stage_preview)
 
         const player_name = document.createElement('div')
