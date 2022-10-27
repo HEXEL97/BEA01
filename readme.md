@@ -37,6 +37,6 @@ Az alap feladatok (12 pont)
 
 Plusz feladatok (plusz 5 pont)
 
-[ ] Szerkesztő: saját pályák létrehozhatók tetszőleges méretben és kiinduló mezőkkel (3 pont)
+[X] Szerkesztő: saját pályák létrehozhatók tetszőleges méretben és kiinduló mezőkkel (3 pont)
 [ ] Szerkesztő: a saját pályák localStorage-ben tartósan tárolódnak (1 pont)
 [ ] Szerkesztő: a mentett pálya később szerkesztésre újra megnyitható és módosítás után menthető (1 pont)

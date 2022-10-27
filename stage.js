@@ -99,7 +99,7 @@ export class Stage {
 
     sanitize() {
         this.map((cell) => {
-            return cell.type === type_block ? cell : { type: type_empty, value: 0 }
+            return cell.type === type_block ? cell : { type: type_empty, value: 0, x: cell.x, y: cell.y }
         })
     }
 
@@ -127,6 +127,24 @@ export class Stage {
             });
             this.setCoords()
         }
+    }
+
+    serialize() {
+        return JSON.stringify({
+            name: this.name,
+            matrix: this.matrix.map(row => {
+                return row.map(cell => {
+                    switch (cell.type) {
+                        case type_block:
+                            return `b${cell.value === null ? 'n' : cell.value}`
+                        case type_empty:
+                        case type_light:
+                        default:
+                            return 'em'
+                    }
+                })
+            })
+        })
     }
 
 }

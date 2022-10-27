@@ -9,6 +9,7 @@ const type_light = 'light'
 
 const mode_play = 'play'
 const mode_edit = 'edit'
+const mode_test = 'test'
 
 const dark = 0
 
@@ -19,12 +20,6 @@ export class Game {
     container = undefined // all-purpose container element
     stage = undefined // selected stage (level) of the game
     stage_default = undefined // stage default state for reload purposes
-
-    /*
-    game_container = undefined // element of all the game elements
-    play_area = undefined // element for the game itself
-    timer_element = undefined // display for time wasted
-    */
 
     mode = mode_play // play area mode (play / edit)
 
@@ -71,7 +66,7 @@ export class Game {
         }
 
         this.stage = stage
-        this.stage_default = default_stage === undefined ? new Stage(JSON.parse(JSON.stringify(stage))) : default_stage
+        this.backupStage(default_stage)
 
         this.valid = false
 
@@ -84,6 +79,10 @@ export class Game {
             this.validate()
         })
 
+    }
+
+    backupStage(stage = undefined) {
+        this.stage_default = stage === undefined ? new Stage(JSON.parse(JSON.stringify(this.stage))) : stage
     }
 
     saveGame() {
@@ -116,7 +115,11 @@ export class Game {
             this.stopTimer()
             this.setStage(this.stage_default)
         }, 500)
-        this.view(this.ui.game_container) // ???
+        this.view(this.ui.game_container)
+    }
+
+    saveStage() {
+        console.log(this.stage.serialize())
     }
 
     saveScore() {
@@ -154,7 +157,7 @@ export class Game {
 
         switch (this.mode) {
             case mode_play:
-                this.setType(cell, cell.type === type_empty ? type_light : type_empty)
+            case mode_test:
 
                 const spread = (origin, fn) => {
 
@@ -169,19 +172,21 @@ export class Game {
 
                 }
 
-                if (cell.type === type_light) {
-
-                    spread(cell, this.illuminate)
-                    this.getNeighbours(cell).filter(neighbour => neighbour.type === type_block).forEach(block => { this.decrease(block) })
-
-                } else {
-
-                    spread(cell, this.extinguish)
-                    this.getNeighbours(cell).filter(neighbour => neighbour.type === type_block).forEach(block => { this.increase(block) })
-
+                switch (cell.type) {
+                    case type_empty:
+                        cell.type = type_light
+                        spread(cell, this.illuminate)
+                        this.getNeighbours(cell).filter(neighbour => neighbour.type === type_block).forEach(block => { this.decrease(block) })
+                        this.validate()
+                        break
+                    case type_light:
+                        cell.type = type_empty
+                        spread(cell, this.extinguish)
+                        this.getNeighbours(cell).filter(neighbour => neighbour.type === type_block).forEach(block => { this.increase(block) })
+                        this.validate()
+                        break
                 }
 
-                this.validate()
                 break
             case mode_edit:
                 switch (cell.type) {
@@ -204,28 +209,25 @@ export class Game {
     }
 
     handleKeyDown(keycode) {
-        if (this.mode == mode_edit) {
+        if (this.mode !== mode_play) {
             switch (keycode) {
                 case 'ArrowUp':
-                    this.stage.grow()
+                    if (this.mode == mode_edit) this.stage.grow()
                     break
                 case 'ArrowDown':
-                    this.stage.shrink()
+                    if (this.mode == mode_edit) this.stage.shrink()
                     break
-                default:
                 case 'Space':
                     switch (this.mode) {
-                        case mode_play:
-                            this.mode = mode_edit
+                        case mode_test:
+                            this.setMode(mode_edit)
                             this.stage.sanitize()
-                            this.ui.render()
                             break
                         case mode_edit:
-                            this.mode = mode_play
+                            this.setMode(mode_test)
                             break
                     }
                     break
-                    console.log(keycode)
             }
             this.render()
         }
@@ -252,15 +254,23 @@ export class Game {
 
     setMode(mode) {
         this.mode = mode;
+        this.ui.game_container.classList.remove('test')
         switch (mode) {
-            case mode_play:
-                this.ui.getPlayModeElements().forEach(element => { this.ui.showElement(element) })
+            case mode_test:
+                this.ui.showElement(this.ui.restart_button)
                 this.ui.getEditModeElements().forEach(element => { this.ui.hideElement(element) })
                 break
+            case mode_play:
+                this.startTimer(0)
+                this.ui.getPlayModeElements().forEach(element => { this.ui.showElement(element) })
+                this.ui.getEditModeElements().forEach(element => { this.ui.hideElement(element) })
+                this.ui.game_container.classList.remove('test')
+                break
             case mode_edit:
-                this.stage = undefined
                 this.ui.getEditModeElements().forEach(element => { this.ui.showElement(element) })
                 this.ui.getPlayModeElements().forEach(element => { this.ui.hideElement(element) })
+                this.ui.game_container.classList.add('test')
+                this.ui.setFinished(false)
                 break
         }
     }
@@ -371,15 +381,17 @@ export class Game {
 
     validate() {
         this.valid = this.isValid()
-        if (this.valid) {
-            this.stopTimer()
-            this.saveScore()
-            this.deleteSave()
-        } else {
-            if (this.stage.getLampCount() === 0) {
+        if (this.mode == mode_play) {
+            if (this.valid) {
+                this.stopTimer()
+                this.saveScore()
                 this.deleteSave()
             } else {
-                this.saveGame()
+                if (this.stage.getLampCount() === 0) {
+                    this.deleteSave()
+                } else {
+                    this.saveGame()
+                }
             }
         }
         this.ui.setFinished(this.valid)
@@ -422,6 +434,7 @@ class GameUI {
 
     back_button = undefined
     restart_button = undefined
+    save_button = undefined
     timer_element = undefined
 
     scoreboard_element = undefined
@@ -463,8 +476,13 @@ class GameUI {
 
         this.restart_button = document.createElement('button')
         this.restart_button.innerText = "[restart]"
-        this.restart_button.addEventListener('click', () => { this.restart() })
+        this.restart_button.addEventListener('click', () => { this.game.restart() })
         action_buttons.appendChild(this.restart_button)
+
+        this.save_button = document.createElement('button')
+        this.save_button.innerText = "[save]"
+        this.save_button.addEventListener('click', () => { this.game.saveStage() })
+        action_buttons.appendChild(this.save_button)
 
         this.game_element.appendChild(action_buttons)
 
@@ -524,7 +542,7 @@ class GameUI {
 
     getEditModeElements() {
         return [
-
+            this.save_button,
         ]
     }
 
@@ -542,6 +560,8 @@ class GameUI {
 
         const width = `${Math.ceil(100 / matrix.length)}%`
         const height = `${Math.ceil(100 / matrix[0].length)}%`
+
+        this.play_area.style.fontSize = `${Math.ceil(100 / matrix[0].length) * 2}px`
 
         matrix.forEach(row => {
 
