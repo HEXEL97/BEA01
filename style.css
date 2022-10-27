@@ -50,7 +50,7 @@
 
 * {
     font-family: 'Silkscreen', cursive;
-    font-size: 30px;
+    /*font-size: 30px;*/
 }
 
 body {
@@ -181,6 +181,23 @@ button:active {
     gap: 30px
 }
 
+.game-container .game-wrapper.test .empty {
+    transition: all 0.2s ease-in-out;
+    background-color: rgb(130, 144, 140);
+}
+
+.game-container .game-wrapper.test .empty:hover {
+    background-color: rgb(161, 184, 176);
+}
+
+.game-container .game-wrapper.test .block {
+    background-color: rgb(74, 74, 74);
+}
+
+.game-container .game-wrapper.test .block:hover {
+    background-color: rgb(118, 118, 118);
+}
+
 .play-area {
     height: 100%;
     display: flex;
@@ -259,6 +276,7 @@ button:active {
 }
 
 .board-cell.block {
+    cursor: default;
     background-color: var(--color-dark);
     color: var(--color-light);
 }
