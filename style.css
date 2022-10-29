@@ -233,13 +233,10 @@ button:active {
     text-shadow: 0 0 10px var(--color-happy);
 }
 
-.paused {
-
-    animation-duration: 0.4s;
-    animation-name: prescription-glasses;
-    animation-fill-mode: forwards;
-    animation-iteration-count: 1;
-
+.tooltip {
+    height: 50px;
+    text-align: center;
+    order: 3;
 }
 
 .board-row {

@@ -11,15 +11,14 @@ const mode_play = 'play'
 const mode_edit = 'edit'
 const mode_test = 'test'
 
-const dark = 0
-
 export class Game {
 
     container = undefined // all-purpose container element
+
     stage = undefined // selected stage (level) of the game
     stage_default = undefined // stage default state for reload purposes
 
-    mode = mode_play // play area mode (play / edit)
+    mode = mode_play // play area mode
 
     player_name = undefined // probably some awesome dude (or gal)
     valid = false // game solve status
@@ -70,10 +69,9 @@ export class Game {
 
         this.render(() => {
             setTimeout(() => {
-                this.loadSave()
                 this.startTimer(this.seconds)
+                this.loadSave()
             }, 500)
-
             this.validate()
         })
 
@@ -110,10 +108,10 @@ export class Game {
 
     restart() {
         setTimeout(() => {
-            this.stopTimer()
+            this.stopTimer(true)
             this.setStage(this.stage_default)
         }, 500)
-        this.view(this.ui.game_container)
+        this.ui.view(this.ui.game_container)
     }
 
     saveStage() {
@@ -219,7 +217,6 @@ export class Game {
                     switch (this.mode) {
                         case mode_test:
                             this.setMode(mode_edit)
-                            this.stage.sanitize()
                             break
                         case mode_edit:
                             this.setMode(mode_test)
@@ -252,24 +249,10 @@ export class Game {
 
     setMode(mode) {
         this.mode = mode;
-        this.ui.game_container.classList.remove('test')
-        switch (mode) {
-            case mode_test:
-                this.ui.showElement(this.ui.restart_button)
-                this.ui.getEditModeElements().forEach(element => { this.ui.hideElement(element) })
-                break
-            case mode_play:
-                this.ui.getPlayModeElements().forEach(element => { this.ui.showElement(element) })
-                this.ui.getEditModeElements().forEach(element => { this.ui.hideElement(element) })
-                this.ui.game_container.classList.remove('test')
-                break
-            case mode_edit:
-                this.ui.getEditModeElements().forEach(element => { this.ui.showElement(element) })
-                this.ui.getPlayModeElements().forEach(element => { this.ui.hideElement(element) })
-                this.ui.game_container.classList.add('test')
-                this.ui.setFinished(false)
-                break
+        if (mode === mode_edit && this.stage !== undefined) {
+            this.stage.sanitize()
         }
+        this.ui.setMode(mode)
     }
 
     setValue(cell, value) {
@@ -341,7 +324,7 @@ export class Game {
             cell.overloaded = false
             cell.element.classList.remove('stressed')
         }
-        if (cell.value === dark) {
+        if (cell.value === 0) {
             setTimeout(() => {
                 cell.element.classList.remove('lumos')
             }, delay)
@@ -372,8 +355,9 @@ export class Game {
     }
 
     stopTimer(reset = false) {
-        clearTimeout(this.timer)
         if (reset) this.seconds = 0
+        this.ui.updateTimer(this.seconds)
+        clearTimeout(this.timer)
     }
 
     validate() {

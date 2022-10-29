@@ -11,28 +11,39 @@ const mode_play = 'play'
 const mode_edit = 'edit'
 const mode_test = 'test'
 
+const countdown_seconds = 1
+
 const create = (type) => { return document.createElement(type) }
 
 export class GameUI {
 
+    // instance of Game
+
     game = undefined
+
+    // main container
 
     container = undefined
 
+    // game UI elements
 
     game_container = undefined
     game_element = undefined
-
+    play_area = undefined
     back_button = undefined
+
+    // removable UI elements
+
     restart_button = undefined
     save_button = undefined
     timer_element = undefined
-
+    tooltip_element = undefined
     scoreboard_element = undefined
-    play_area = undefined
 
+    tooltip_edit = "use arrow up / down to change size<br>press space to start testing"
+    tooltip_test = "press space to stop testing"
 
-    game = undefined
+    // completely separate views from the game itself
 
     name_editor = undefined
     stage_selector = undefined
@@ -75,6 +86,7 @@ export class GameUI {
         this.save_button.addEventListener('click', () => { this.game.saveStage() })
         action_buttons.appendChild(this.save_button)
 
+
         this.game_element.appendChild(action_buttons)
 
         this.timer_element = document.createElement('h1')
@@ -82,6 +94,11 @@ export class GameUI {
         this.timer_element.innerText = '00:00'
 
         this.game_element.appendChild(this.timer_element)
+
+        this.tooltip_element = document.createElement('p')
+        this.tooltip_element.classList.add('tooltip')
+        this.setTooltip(this.tooltip_edit)
+        this.game_element.appendChild(this.tooltip_element)
 
         this.scoreboard_element = document.createElement('div')
         this.scoreboard_element.classList.add('scoreboard')
@@ -110,31 +127,77 @@ export class GameUI {
 
     }
 
-    showElement(element) {
-        if (element.style.display === 'none') {
-            element.style.display = element.data.display_mode
+    showElements(elements) {
+        elements.forEach(element => {
+            if (element.style.display === 'none') {
+                element.style.display = element.data.display_mode
+                console.log([element.innerHTML, element.style.display])
+            }
+        })
+    }
+
+    hideElements(elements) {
+        elements.forEach(element => {
+            element.data = {
+                display_mode: (element.style.display !== 'none') ? element.style.display : 'block'
+            }
+            element.style.display = 'none'
+        })
+    }
+
+    getGameModeElements(mode) {
+        switch (mode) {
+            case mode_play:
+                return [
+                    this.restart_button,
+                    this.timer_element,
+                    this.scoreboard_element,
+                ]
+            case mode_edit:
+                return [
+                    this.save_button,
+                    this.tooltip_element,
+                ]
+            case mode_test:
+                return [
+                    this.restart_button,
+                    this.tooltip_element,
+                ]
         }
     }
 
-    hideElement(element) {
-        element.data = {
-            display_mode: element.style.display
-        }
-        element.style.display = 'none'
-    }
-
-    getPlayModeElements() {
+    getRemovableElements() {
         return [
-            this.timer_element,
             this.restart_button,
-            this.scoreboard_element
+            this.save_button,
+            this.timer_element,
+            this.tooltip_element,
+            this.scoreboard_element,
         ]
     }
 
-    getEditModeElements() {
-        return [
-            this.save_button,
-        ]
+    setTooltip(text) {
+        this.tooltip_element.innerHTML = text
+    }
+
+    setMode(mode) {
+
+        this.hideElements(this.getRemovableElements())
+        this.showElements(this.getGameModeElements(mode))
+
+        this.game_container.classList.remove('test')
+
+        switch (mode) {
+            case mode_test:
+                this.setTooltip(this.tooltip_test)
+                break
+            case mode_edit:
+                this.game_container.classList.add('test')
+                this.setTooltip(this.tooltip_edit)
+                this.setFinished(false)
+                break
+
+        }
     }
 
     renderGameElement() {
@@ -311,7 +374,7 @@ export class GameUI {
             const new_game_button = document.createElement('button')
             new_game_button.innerText = 'new game'
             new_game_button.addEventListener('click', () => {
-                this.countdown(3, () => {
+                this.countdown(countdown_seconds, () => {
                     this.game.setMode(mode_play)
                     this.game.setStage(stage)
                     this.view(this.game_container)
@@ -323,11 +386,11 @@ export class GameUI {
                 const continue_game_button = document.createElement('button')
                 continue_game_button.innerText = 'continue game'
                 continue_game_button.addEventListener('click', () => {
-                    this.countdown(3, () => {
+                    this.countdown(countdown_seconds, () => {
                         stage.setSaveData(save)
                         this.game.setMode(mode_play)
                         this.game.setStage(stage)
-                        this.view(this.ui.game_container)
+                        this.view(this.game_container)
                     })
                 })
                 stage_preview.appendChild(continue_game_button)
