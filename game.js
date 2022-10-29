@@ -28,6 +28,8 @@ export class Game {
 
     flow_rate = 50 // light flow speed (ms)
 
+    // core
+
     constructor(container = undefined) {
 
         if (!container instanceof HTMLElement) {
@@ -50,6 +52,8 @@ export class Game {
         }
 
     }
+
+    // setters
 
     setPlayerName(name) {
         this.player_name = name
@@ -77,77 +81,88 @@ export class Game {
 
     }
 
-    backupStage(stage = undefined) {
-        this.stage_default = stage === undefined ? new Stage(JSON.parse(JSON.stringify(this.stage))) : stage
+    setType(cell, type) {
+        cell.type = type
+        switch (type) {
+            case type_light:
+                cell.element.innerText = '*'
+                this.illuminate(cell)
+                break
+            case type_empty:
+                cell.element.innerText = ''
+                cell.element.classList.remove('stressed')
+                cell.overloaded = false
+                this.extinguish(cell)
+                break
+            case type_block:
+                cell.element.innerText = cell.value
+                break
+        }
     }
 
-    saveGame() {
-        Tools.setCookie(this.stage.name, {
-            lamp_matrix: this.stage.export(),
-            seconds: this.seconds,
+    setMode(mode) {
+        this.mode = mode;
+        if (mode === mode_edit && this.stage !== undefined) {
+            this.stage.sanitize()
+        }
+        this.ui.setMode(mode)
+    }
+
+    setValue(cell, value) {
+        cell.value = value
+        if (cell.type == type_block) {
+            cell.element.classList.remove('stressed')
+            cell.element.classList.remove('happy')
+            if (cell.value < 0) {
+                cell.element.classList.add('stressed')
+            } else if (cell.value === 0) {
+                cell.element.classList.add('happy')
+            }
+        }
+    }
+
+    // getters
+
+    getRange(cell) {
+        const col = this.stage.matrix.map(row => row.filter((c, index) => c.x === cell.x)[0])
+        const row = this.stage.matrix.filter((row, index) => cell.y === index)[0]
+
+        const up = col.filter(c => c.y < cell.y).reverse()
+        const down = col.filter(c => c.y > cell.y)
+        const left = row.filter(c => c.x < cell.x).reverse()
+        const right = row.filter(c => c.x > cell.x)
+
+        let directions = [up, right, down, left]
+
+        directions.forEach((direction, key) => {
+            const block_position = direction.findIndex(c => c.type === type_block)
+            if (block_position !== -1) {
+                directions[key] = direction.filter((c, index) => { return index < block_position })
+            }
         })
+
+        return directions
     }
 
-    deleteSave() {
-        Tools.setCookie(this.stage.name, null, 0)
-    }
+    getNeighbours(cell) {
 
-    loadSave() {
-        const save = this.stage.getLampMatrix()
-        this.seconds = this.stage.getSaveSeconds()
-        if (save === null) return
-        let i = 0
-        save.forEach(y => {
-            y[1].forEach(x => {
-                setTimeout(() => {
-                    this.handleClick(this.stage.matrix[y[0]][x])
-                }, (50 * i++))
-            })
-        })
-    }
+        let neighbours = []
 
-    restart() {
-        setTimeout(() => {
-            this.stopTimer(true)
-            this.setStage(this.stage_default)
-        }, 500)
-        this.ui.view(this.ui.game_container)
-    }
-
-    saveStage() {
-        console.log(this.stage.serialize())
-    }
-
-    saveScore() {
-
-        const scoreboard = ScoreBoard.saveScore(this.stage.name, this.player_name, this.seconds)
-        this.updateScore()
-
-    }
-
-    updateScore() {
-
-        const scoreboard = ScoreBoard.getScores(this.stage.name);
-        if (scoreboard !== undefined) {
-            this.ui.updateScoreBoard(scoreboard.scores)
+        const add = (y, x) => {
+            if (this.stage.matrix[y] !== undefined && this.stage.matrix[y][x] !== undefined) {
+                neighbours.push(this.stage.matrix[y][x])
+            }
         }
 
+        add(cell.y + 1, cell.x)
+        add(cell.y, cell.x + 1)
+        add(cell.y - 1, cell.x)
+        add(cell.y, cell.x - 1)
+
+        return neighbours
     }
 
-    render(_callback = () => { }) {
-
-        this.ui.renderGameElement()
-
-        if (this.stage !== undefined) {
-
-            this.ui.renderStageMatrix(this.stage.getMatrix())
-            this.updateScore()
-
-        }
-
-        _callback()
-
-    }
+    // handlers
 
     handleClick(cell) {
 
@@ -228,83 +243,94 @@ export class Game {
         }
     }
 
-    setType(cell, type) {
-        cell.type = type
-        switch (type) {
-            case type_light:
-                cell.element.innerText = '*'
-                this.illuminate(cell)
-                break
-            case type_empty:
-                cell.element.innerText = ''
-                cell.element.classList.remove('stressed')
-                cell.overloaded = false
-                this.extinguish(cell)
-                break
-            case type_block:
-                cell.element.innerText = cell.value
-                break
-        }
+    // logicals
+
+    isValid() {
+
+        return this.stage.matrix.map(row => {
+            return row.map(cell => {
+                switch (cell.type) {
+                    case type_empty: return cell.value > 0
+                    case type_block: return [0, null].includes(cell.value)
+                    case type_light: return cell.overloaded === undefined || cell.overloaded === false
+                }
+            }).find(value => value === false)
+        }).find(value => value === false) === undefined
+
     }
 
-    setMode(mode) {
-        this.mode = mode;
-        if (mode === mode_edit && this.stage !== undefined) {
-            this.stage.sanitize()
-        }
-        this.ui.setMode(mode)
+    // other
+
+    backupStage(stage = undefined) {
+        this.stage_default = stage === undefined ? new Stage(JSON.parse(JSON.stringify(this.stage))) : stage
     }
 
-    setValue(cell, value) {
-        cell.value = value
-        if (cell.type == type_block) {
-            cell.element.classList.remove('stressed')
-            cell.element.classList.remove('happy')
-            if (cell.value < 0) {
-                cell.element.classList.add('stressed')
-            } else if (cell.value === 0) {
-                cell.element.classList.add('happy')
-            }
-        }
-    }
-
-    getRange(cell) {
-        const col = this.stage.matrix.map(row => row.filter((c, index) => c.x === cell.x)[0])
-        const row = this.stage.matrix.filter((row, index) => cell.y === index)[0]
-
-        const up = col.filter(c => c.y < cell.y).reverse()
-        const down = col.filter(c => c.y > cell.y)
-        const left = row.filter(c => c.x < cell.x).reverse()
-        const right = row.filter(c => c.x > cell.x)
-
-        let directions = [up, right, down, left]
-
-        directions.forEach((direction, key) => {
-            const block_position = direction.findIndex(c => c.type === type_block)
-            if (block_position !== -1) {
-                directions[key] = direction.filter((c, index) => { return index < block_position })
-            }
+    saveGame() {
+        Tools.setCookie(this.stage.name, {
+            lamp_matrix: this.stage.export(),
+            seconds: this.seconds,
         })
-
-        return directions
     }
 
-    getNeighbours(cell) {
+    deleteSave() {
+        Tools.setCookie(this.stage.name, null, 0)
+    }
 
-        let neighbours = []
+    loadSave() {
+        const save = this.stage.getLampMatrix()
+        this.seconds = this.stage.getSaveSeconds()
+        if (save === null) return
+        let i = 0
+        save.forEach(y => {
+            y[1].forEach(x => {
+                setTimeout(() => {
+                    this.handleClick(this.stage.matrix[y[0]][x])
+                }, (50 * i++))
+            })
+        })
+    }
 
-        const add = (y, x) => {
-            if (this.stage.matrix[y] !== undefined && this.stage.matrix[y][x] !== undefined) {
-                neighbours.push(this.stage.matrix[y][x])
-            }
+    restart() {
+        setTimeout(() => {
+            this.stopTimer(true)
+            this.setStage(this.stage_default)
+        }, 500)
+        this.ui.view(this.ui.game_container)
+    }
+
+    saveStage() {
+        console.log(this.stage.serialize())
+    }
+
+    saveScore() {
+
+        const scoreboard = ScoreBoard.saveScore(this.stage.name, this.player_name, this.seconds)
+        this.updateScore()
+
+    }
+
+    updateScore() {
+
+        const scoreboard = ScoreBoard.getScores(this.stage.name);
+        if (scoreboard !== undefined) {
+            this.ui.updateScoreBoard(scoreboard.scores)
         }
 
-        add(cell.y + 1, cell.x)
-        add(cell.y, cell.x + 1)
-        add(cell.y - 1, cell.x)
-        add(cell.y, cell.x - 1)
+    }
 
-        return neighbours
+    render(_callback = undefined) {
+
+        this.ui.renderGameElement()
+
+        if (this.stage !== undefined) {
+
+            this.ui.renderStageMatrix(this.stage.getMatrix())
+            this.updateScore()
+
+        }
+
+        if (_callback !== undefined) { _callback() }
+
     }
 
     illuminate(cell, delay = 0) {
@@ -377,20 +403,6 @@ export class Game {
         }
         this.ui.setFinished(this.valid)
         return this.valid
-
-    }
-
-    isValid() {
-
-        return this.stage.matrix.map(row => {
-            return row.map(cell => {
-                switch (cell.type) {
-                    case type_empty: return cell.value > 0
-                    case type_block: return [0, null].includes(cell.value)
-                    case type_light: return cell.overloaded === undefined || cell.overloaded === false
-                }
-            }).find(value => value === false)
-        }).find(value => value === false) === undefined
 
     }
 
