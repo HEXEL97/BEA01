@@ -1,3 +1,5 @@
+import { Tools } from "./tools.js"
+
 const type_block = 'block'
 const type_empty = 'empty'
 const type_light = 'light'
@@ -6,15 +8,64 @@ export class Stage {
 
     matrix = undefined
     name = undefined
+    custom = false
 
     lamp_matrix = null
     time = 0
 
-    constructor(stage = undefined) {
+    static create(height, width, name = undefined) {
+        if (name === undefined) {
+            let number = 1
+            name = `custom #${number}`
+            while (Tools.getCookie(name) !== null) { name = `custom #${++number}` }
+        }
+
+        console.log(name)
+
+        const stage = {
+            name: name,
+            matrix: [],
+        }
+        for (let i = 0; i < height; i++) {
+            const row = []
+            for (let j = 0; j < width; j++) {
+                row.push({ type: type_empty, value: 0 })
+            }
+            stage.matrix.push(row)
+        }
+        return new Stage(stage, true)
+    }
+
+    static parse(json) {
+
+        const stage = JSON.parse(json)
+
+        stage.matrix = stage.matrix.map((row) => {
+            return row.map((cell) => {
+                switch (cell) {
+                    case 'em': return { type: 'empty', value: 0 }
+                    case 'bn': return { type: 'block', value: null }
+                    case 'b0': return { type: 'block', value: 0 }
+                    case 'b1': return { type: 'block', value: 1 }
+                    case 'b2': return { type: 'block', value: 2 }
+                    case 'b3': return { type: 'block', value: 3 }
+                    case 'b4': return { type: 'block', value: 4 }
+                }
+                return aliases[cell]
+            })
+        })
+
+        stage.custom = true
+
+        return stage
+    }
+
+    constructor(stage = undefined, custom = false) {
 
         this.matrix = JSON.parse(JSON.stringify(stage.matrix))
         this.setCoords()
         this.name = stage.name
+        this.custom = custom
 
     }
 
@@ -31,22 +82,7 @@ export class Stage {
         })
     }
 
-    static create(height, width) {
-        const stage = {
-            name: 'custom',
-            matrix: [],
-        }
-        for (let i = 0; i < height; i++) {
-            const row = []
-            for (let j = 0; j < width; j++) {
-                row.push({ type: type_empty, value: 0 })
-            }
-            stage.matrix.push(row)
-        }
-        return new Stage(stage)
-    }
-
-    export() {
+    getSaveData() {
         return this.matrix.map((row, y) => {
             const r = row.map((cell, x) => {
                 return cell.type === 'light' ? x : null
@@ -132,6 +168,7 @@ export class Stage {
     serialize() {
         return JSON.stringify({
             name: this.name,
+            custom: this.custom,
             matrix: this.matrix.map(row => {
                 return row.map(cell => {
                     switch (cell.type) {

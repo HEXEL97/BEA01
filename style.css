@@ -114,6 +114,15 @@ button:active {
     border-left: 10px solid var(--color-holy-light);
 }
 
+button:hover.danger,
+button.active.danger {
+    background-color: var(--color-stressed);
+    border-right: 10px solid rgb(122, 46, 46);
+    border-bottom: 10px solid rgb(122, 46, 46);
+    border-top: 10px solid rgb(228, 98, 98);
+    border-left: 10px solid rgb(228, 98, 98);
+}
+
 .menu {
     z-index: 10;
     position: absolute;

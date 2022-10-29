@@ -2,6 +2,7 @@ import { Tools } from "./tools.js"
 import { Stage } from "./stage.js"
 import { ScoreBoard } from "./scoreboard.js"
 import { GameUI } from "./ui.js"
+import * as stages_import from "./stages.js"
 
 const type_block = 'block'
 const type_empty = 'empty'
@@ -15,7 +16,8 @@ export class Game {
 
     container = undefined // all-purpose container element
 
-    stage = undefined // selected stage (level) of the game
+    stages = [] // all stages
+    stage = undefined // selected stage of the game
     stage_default = undefined // stage default state for reload purposes
 
     mode = mode_play // play area mode
@@ -102,8 +104,13 @@ export class Game {
 
     setMode(mode) {
         this.mode = mode;
-        if (mode === mode_edit && this.stage !== undefined) {
-            this.stage.sanitize()
+        switch (mode) {
+            case mode_test:
+                this.backupStage()
+                break
+            case mode_edit:
+                if (this.stage !== undefined) this.stage = this.stage_default
+                break
         }
         this.ui.setMode(mode)
     }
@@ -160,6 +167,21 @@ export class Game {
         add(cell.y, cell.x - 1)
 
         return neighbours
+    }
+
+    getStages() {
+
+        this.stages = Object.values(stages_import)
+
+        let number = 1
+        let custom = Tools.getCookie(`custom #${number}`)
+        while (custom !== null) {
+            this.stages.push(Stage.parse(custom))
+            custom = Tools.getCookie(`custom #${++number}`)
+        }
+
+        return this.stages
+
     }
 
     // handlers
@@ -266,14 +288,14 @@ export class Game {
     }
 
     saveGame() {
-        Tools.setCookie(this.stage.name, {
-            lamp_matrix: this.stage.export(),
+        Tools.setCookie(`save_${this.stage.name}`, {
+            lamp_matrix: this.stage.getSaveData(),
             seconds: this.seconds,
         })
     }
 
     deleteSave() {
-        Tools.setCookie(this.stage.name, null, 0)
+        Tools.setCookie(`save_${this.stage.name}`, null, 0)
     }
 
     loadSave() {
@@ -299,7 +321,7 @@ export class Game {
     }
 
     saveStage() {
-        console.log(this.stage.serialize())
+        Tools.setCookie(this.stage.getName(), this.stage.serialize())
     }
 
     saveScore() {
